@@ -4,6 +4,7 @@ namespace Tests\Unit\Services\VCard;
 
 use Tests\TestCase;
 use Tests\Api\DAV\CardEtag;
+use App\Models\Contact\Note;
 use App\Models\Contact\Gender;
 use App\Models\Account\Account;
 use App\Models\Contact\Address;
@@ -680,6 +681,84 @@ class ExportVCardTest extends TestCase
             'account_id' => $contact->account_id,
             'contact_id' => $contact->id,
             'name' => 'tag2',
+        ]);
+
+        $exportVCard = app(ExportVCard::class);
+        $contact = $contact->refresh();
+        $vCard = $this->invokePrivateMethod($exportVCard, 'export', [$contact]);
+
+        $this->assertCount(
+            self::defaultPropsCount + 7,
+            $vCard->children()
+        );
+
+        $this->assertVObjectEqualsVObject($this->getCard($contact), $vCard);
+    }
+
+    /** @test */
+    public function vcard_add_concatenated_notes()
+    {
+        $account = factory(Account::class)->create();
+        $contact = factory(Contact::class)->create([
+            'account_id' => $account->id,
+        ]);
+        factory(Note::class)->create([
+            'account_id' => $account->id,
+            'contact_id' => $contact->id,
+            'body' => 'first note',
+        ]);
+        factory(Note::class)->create([
+            'account_id' => $account->id,
+            'contact_id' => $contact->id,
+            'body' => 'second note',
+        ]);
+        $vCard = new VCard();
+
+        $exportVCard = app(ExportVCard::class);
+        $this->invokePrivateMethod($exportVCard, 'exportNote', [$contact, $vCard]);
+
+        $this->assertCount(
+            self::defaultPropsCount + 1,
+            $vCard->children()
+        );
+        $this->assertStringContainsString('NOTE:first note\\nsecond note', $vCard->serialize());
+    }
+
+    /** @test */
+    public function vcard_add_no_note_without_notes()
+    {
+        $account = factory(Account::class)->create();
+        $contact = factory(Contact::class)->create([
+            'account_id' => $account->id,
+        ]);
+        $vCard = new VCard();
+
+        $exportVCard = app(ExportVCard::class);
+        $this->invokePrivateMethod($exportVCard, 'exportNote', [$contact, $vCard]);
+
+        $this->assertCount(
+            self::defaultPropsCount,
+            $vCard->children()
+        );
+        $this->assertStringNotContainsString('NOTE', $vCard->serialize());
+    }
+
+    /** @test */
+    public function vcard_with_notes()
+    {
+        $account = factory(Account::class)->create();
+        $contact = factory(Contact::class)->create([
+            'account_id' => $account->id,
+        ]);
+        factory(Note::class)->create([
+            'account_id' => $account->id,
+            'contact_id' => $contact->id,
+            'body' => 'first note',
+        ]);
+        factory(Note::class)->create([
+            'account_id' => $account->id,
+            'contact_id' => $contact->id,
+            'body' => 'second note',
         ]);
 
         $exportVCard = app(ExportVCard::class);

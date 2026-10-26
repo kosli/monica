@@ -86,6 +86,12 @@ N:{$contact->last_name};{$contact->first_name};{$contact->middle_name};;
         if (! empty($tags)) {
             $data .= "CATEGORIES:{$tags}\n";
         }
+        $notes = $contact->notes->map(function ($note) {
+            return trim((string) $note->body);
+        })->filter()->implode("\n");
+        if (! empty($notes)) {
+            $data .= 'NOTE:'.str_replace("\n", '\\n', $notes)."\n";
+        }
         $data .= "END:VCARD\n";
 
         if ($realFormat) {

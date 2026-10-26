@@ -11,7 +11,6 @@ use App\Helpers\FormHelper;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use App\Helpers\VCardHelper;
-use App\Models\Contact\Note;
 use App\Helpers\LocaleHelper;
 use App\Services\BaseService;
 use function Safe\preg_split;
@@ -1038,15 +1037,9 @@ class ImportVCard extends BaseService
      */
     private function importNote(Contact $contact, VCard $entry): void
     {
-        if (is_null($entry->NOTE)) {
-            return;
-        }
-
-        $note = Note::create([
-            'contact_id' => $contact->id,
-            'account_id' => $contact->account_id,
-            'body' => $entry->NOTE,
-        ]);
+        // Notes coming from CardDAV sync are ignored: notes are managed in
+        // Monica, and the NOTE property is exported as a concatenation of
+        // all the contact's notes instead.
     }
 
     /**
