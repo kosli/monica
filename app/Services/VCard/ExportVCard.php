@@ -5,6 +5,7 @@ namespace App\Services\VCard;
 use Sabre\VObject\Reader;
 use App\Models\Contact\Tag;
 use Illuminate\Support\Str;
+use App\Models\Contact\Note;
 use App\Services\BaseService;
 use App\Models\Contact\Gender;
 use App\Models\Contact\Contact;
@@ -99,6 +100,7 @@ class ExportVCard extends BaseService
         $this->exportContactFields($contact, $vcard);
         $this->exportTimestamp($contact, $vcard);
         $this->exportTags($contact, $vcard);
+        $this->exportNote($contact, $vcard);
 
         return $vcard;
     }
@@ -335,6 +337,25 @@ class ExportVCard extends BaseService
             $vcard->CATEGORIES = $contact->tags->map(function (Tag $tag): string {
                 return $tag->name;
             })->toArray();
+        }
+    }
+
+    /**
+     * Export the concatenation of all the contact's notes.
+     *
+     * @param  Contact  $contact
+     * @param  VCard  $vcard
+     */
+    private function exportNote(Contact $contact, VCard $vcard)
+    {
+        $vcard->remove('NOTE');
+
+        $notes = $contact->notes->map(function (Note $note): string {
+            return $this->escape($note->body);
+        })->filter()->implode("\n");
+
+        if (! empty($notes)) {
+            $vcard->add('NOTE', $notes);
         }
     }
 }

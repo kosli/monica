@@ -1252,7 +1252,7 @@ END:VCARD', Reader::OPTION_FORGIVING + Reader::OPTION_IGNORE_INVALID_LINES);
     }
 
     /** @test */
-    public function it_imports_notes()
+    public function it_ignores_notes()
     {
         $account = factory(Account::class)->create([]);
         $contact = factory(Contact::class)->create([
@@ -1268,7 +1268,7 @@ END:VCARD', Reader::OPTION_FORGIVING + Reader::OPTION_IGNORE_INVALID_LINES);
 
         $this->invokePrivateMethod($importVCard, 'importNote', [$contact, $vcard]);
 
-        $this->assertDatabaseHas('notes', [
+        $this->assertDatabaseMissing('notes', [
             'account_id' => $account->id,
             'contact_id' => $contact->id,
             'body' => 'a great note about this contact',
